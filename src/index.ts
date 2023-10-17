@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import bolt from '@slack/bolt';
-import { writeData } from './db.js';
+import { setupApp } from './slackApp.js';
 const { App } = bolt;
 
 // Initializes your app in socket mode with your app token and signing secret
@@ -11,13 +11,7 @@ const app = new App({
     appToken: process.env.SLACK_APP_TOKEN,
 });
 
-// Listens to incoming messages that contain "hello"
-app.message('hello', async ({ message, say }) => {
-    if (message.subtype) return;
-    writeData({ events: [message.text ?? ''] })
-    // say() sends a message to the channel where the event was triggered
-    await say(`Hey there <@${'user' in message ? message.user : ''}>!`);
-});
+setupApp(app);
 
 // Start your app
 await app.start(process.env.PORT || 3000);
