@@ -10,11 +10,13 @@ interface Entry {
     content: string;
 }
 
-function readFile(): SavedData {
+// File handling
+
+function readDataFileSync(): SavedData {
     return JSON.parse(fs.readFileSync(SAVE_FILE, 'utf-8'));
 }
 
-async function writeFile(data: SavedData) {
+async function writeDataFile(data: SavedData) {
     await fs.promises.writeFile(SAVE_FILE, JSON.stringify(data));
 }
 
@@ -24,11 +26,15 @@ if (!fs.existsSync(SAVE_FILE)) {
     fs.writeFileSync(SAVE_FILE, JSON.stringify(initialData));
 }
 
-const data = readFile().events;
+// Internal data handling
+
+const data = readDataFileSync().events;
 
 async function updateWithData() {
-    await writeFile({ events: data });
+    await writeDataFile({ events: data });
 }
+
+// API methods
 
 async function addEntry(entry: Entry) {
     data.push(entry);
