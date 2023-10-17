@@ -42,7 +42,7 @@ async function addEntry(entry: Entry) {
 }
 
 function query(condition?: Partial<Entry> | ((entry: Entry) => boolean)): readonly Entry[] {
-    if (!condition) return data;
+    if (!condition) return [...data]; // Prevent mutating root data
 
     const predicate = typeof condition === 'object' ? (entry: Entry) => (
         (Object.keys(condition) as (keyof Entry)[]).every(key => condition[key] === entry[key])
