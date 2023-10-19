@@ -1,13 +1,18 @@
 import { StringIndexed } from '@slack/bolt/dist/types/helpers.js';
-import bolt from '@slack/bolt';
 import { DB } from './db.js';
 import { ChannelEntry, EventEntry } from './index.js';
+import { plainText } from './slackMacros.js';
+import { App } from '@slack/bolt';
+import { Question, questionToBlock, unwrapResponses } from './slackQuestions.js';
 
-function plainText(text: string) {
-    return { type: 'plain_text', text } as const;
-}
+const assignmentQuestions = {
+    title: Question('Title', 'text'),
+    grade: Question('Grade', ['9', '10', '11', '12'] as const),
+    subject: Question('Subject', ['History', 'Math'] as const),
+    description: Question('Description', 'text_multiline'),
+} satisfies Record<string, Question>
 
-export function setupApp(app: bolt.App<StringIndexed>, eventDB: DB<EventEntry>, channelDB: DB<ChannelEntry>) {
+export function setupApp(app: App<StringIndexed>, eventDB: DB<EventEntry>, channelDB: DB<ChannelEntry>) {
 
     // Listens to incoming messages that contain "hello"
     app.message('hello', async ({ message, say }) => {
@@ -18,45 +23,26 @@ export function setupApp(app: bolt.App<StringIndexed>, eventDB: DB<EventEntry>, 
         await say(`Hey there <@${'user' in message ? message.user : ''}>! Here are all the messages you've sent: ${eventDB.query().map(e => e.content).join(',')}`);
     });
 
-    app.command('/assignment', async ({ command, say }) => {
-        //     respond({})
-        //     command.user_id
-        // })
+    app.command('/assignment', async ({ ack, client, body }) => {
+        await client.views.open({
+            // Pass a valid trigger_id within 3 seconds of receiving it
+            trigger_id: body.trigger_id,
+            // View payload
+            view: {
+                type: 'modal',
+                callback_id: 'assignment',
+                title: plainText('Add Assignment'),
+                blocks: Object.entries(assignmentQuestions).map(e => questionToBlock(...e)),
+                submit: plainText('Submit'),
+            }
+        });
 
-        // app.shortcut('assignment', async ({ shortcut, say }) => {
-        say({
-            blocks: [
-                {
-                    type: "header",
-                    text: plainText('Add new Assignment')
-                },
-                {
-                    type: "actions",
-                    elements: [
-                        {
-                            type: 'static_select', action_id: '_set_grade', options: [
-                                { value: '9', text: plainText('9th') },
-                                { value: '10', text: plainText('10th') },
-                                { value: '11', text: plainText('11th') },
-                                { value: '12', text: plainText('12th') },
-                            ]
-                        },
-                        {
-                            type: 'static_select', action_id: '_set_subject', options: [
-                                { value: 'Math', text: plainText('Math') },
-                                { value: 'Physics', text: plainText('Physics') },
-                                { value: 'Science', text: plainText('Science') },
-                                { value: 'English', text: plainText('English') },
-                            ]
-                        }
-                    ]
-                }
-            ],
-            text: `Hey there <@${command.user_id}>!`
-        })
+        ack();
     });
 
-    app.action('button_click', async ({ say }) => {
-        say('Clicked');
+    app.view('assignment', async ({ payload, ack }) => {
+        const responses = unwrapResponses<typeof assignmentQuestions>(payload.state.values);
+        console.log(responses);
+        ack();
     })
 }
