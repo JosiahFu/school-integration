@@ -2,18 +2,11 @@ import 'dotenv/config';
 import bolt from '@slack/bolt';
 import { setupApp } from './slackApp.js';
 import { DB } from './db.js';
+import { ChannelEntry, EventEntry } from './data.js';
 const { App } = bolt;
 
 const EVENT_SAVE_FILE = 'save/events.json';
 const CHANNEL_SAVE_FILE = 'save/channels.json';
-
-interface EventEntry {
-    content: string;
-}
-
-interface ChannelEntry {
-    id: string;
-}
 
 const eventDB = new DB<EventEntry>(EVENT_SAVE_FILE);
 const channelDB = new DB<ChannelEntry>(CHANNEL_SAVE_FILE);

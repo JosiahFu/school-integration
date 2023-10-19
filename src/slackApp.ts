@@ -13,15 +13,7 @@ const assignmentQuestions = {
 } satisfies Record<string, Question>
 
 export function setupApp(app: App<StringIndexed>, eventDB: DB<EventEntry>, channelDB: DB<ChannelEntry>) {
-
-    // Listens to incoming messages that contain "hello"
-    app.message('hello', async ({ message, say }) => {
-        if (message.subtype) return;
-        eventDB.addEntry({ content: message.text ?? '' });
-        channelDB.addEntry({ id: message.channel });
-        // say() sends a message to the channel where the event was triggered
-        await say(`Hey there <@${'user' in message ? message.user : ''}>! Here are all the messages you've sent: ${eventDB.query().map(e => e.content).join(',')}`);
-    });
+    channelDB
 
     app.command('/assignment', async ({ ack, client, body }) => {
         await client.views.open({
@@ -42,7 +34,7 @@ export function setupApp(app: App<StringIndexed>, eventDB: DB<EventEntry>, chann
 
     app.view('assignment', async ({ payload, ack }) => {
         const responses = unwrapResponses<typeof assignmentQuestions>(payload.state.values);
-        console.log(responses);
+        eventDB.addEntry(responses);
         ack();
     })
 }
